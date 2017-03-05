@@ -1,0 +1,8 @@
+[package]
+name = "viztree"
+version = "0.1.0"
+authors = ["Johannes Löthberg <johannes@kyriasis.com>"]
+description = "Library for generating simple tree visualizations"
+
+[dependencies]
+petgraph = "^0.4.3"
