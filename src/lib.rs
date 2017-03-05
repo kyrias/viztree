@@ -59,14 +59,14 @@ pub fn print_tree<N, E>(graph: &Graph<N, E>, node: NodeIndex, levels: &mut Vec<S
 
     let mut neighbors: Vec<NodeIndex> = graph.neighbors(node).collect();
     let last = neighbors.pop();
+
     for neighbor in neighbors {
         levels.push(Symbol::Split);
         print_tree(graph, neighbor, levels);
     }
 
     if let Some(l) = last {
-        let l_neighbors: Vec<NodeIndex> = graph.neighbors(l).collect();
-        if l_neighbors.len() <= 1 {
+        if graph.neighbors(l).collect::<Vec<NodeIndex>>().len() <= 1 {
             levels.push(Symbol::Last);
         } else {
             levels.push(Symbol::Split);
