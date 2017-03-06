@@ -3,8 +3,29 @@ extern crate petgraph;
 
 use std::fmt;
 
-use petgraph::graph::{Graph, NodeIndex};
+use petgraph::graph as pgraph;
 
+
+pub trait Tree<T, K>
+    where K: std::fmt::Display + std::clone::Clone
+{
+    type Index;
+    fn nodes(&self, index: &Self::Index) -> Vec<Self::Index>;
+    fn get(&self, index: &Self::Index) -> K;
+}
+
+impl<K, E> Tree<pgraph::Graph<K, E>, K> for pgraph::Graph<K, E>
+    where K: fmt::Display + std::clone::Clone
+{
+    type Index = pgraph::NodeIndex;
+    fn nodes(&self, index: &Self::Index) -> Vec<Self::Index> {
+        self.neighbors(*index).collect()
+    }
+
+    fn get(&self, index: &Self::Index) -> K {
+        self[*index].clone()
+    }
+}
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Symbol {
@@ -25,20 +46,21 @@ impl fmt::Display for Symbol {
 }
 
 
-pub fn print(graph: &Graph<&str, &str>, root: NodeIndex, print_root: bool) {
+pub fn print<T: Tree<G, K, Index = I>, G, K, I>(graph: &T, root: I, print_root: bool)
+    where K: fmt::Display + std::clone::Clone
+{
     if print_root {
-        print_tree(graph, root, &mut Vec::new());
+        print_tree::<T, G, K, I>(graph, root, &mut Vec::new());
     } else {
-        for neighbor in graph.neighbors(root) {
-            print_tree(graph, neighbor, &mut Vec::new());
+        for neighbor in graph.nodes(&root) {
+            print_tree::<T, G, K, I>(graph, neighbor, &mut Vec::new());
         }
     }
 }
 
 
-pub fn print_tree<N, E>(graph: &Graph<N, E>, node: NodeIndex, levels: &mut Vec<Symbol>)
-    where N: fmt::Display,
-          E: fmt::Display
+pub fn print_tree<T: Tree<G, K, Index = I>, G, K, I>(graph: &T, node: I, levels: &mut Vec<Symbol>)
+    where K: fmt::Display + std::clone::Clone
 {
     let mut prefix = levels.iter()
         .fold(String::new(), |acc, ref s| acc + &format!("{}", &s));
@@ -55,9 +77,9 @@ pub fn print_tree<N, E>(graph: &Graph<N, E>, node: NodeIndex, levels: &mut Vec<S
             levels.push(Symbol::Down);
         }
     }
-    println!("{}{}", prefix, graph[node]);
+    println!("{}{}", prefix, graph.get(&node));
 
-    let mut neighbors: Vec<NodeIndex> = graph.neighbors(node).collect();
+    let mut neighbors: Vec<I> = graph.nodes(&node);
     let last = neighbors.pop();
 
     for neighbor in neighbors {
@@ -66,7 +88,7 @@ pub fn print_tree<N, E>(graph: &Graph<N, E>, node: NodeIndex, levels: &mut Vec<S
     }
 
     if let Some(l) = last {
-        if graph.neighbors(l).collect::<Vec<NodeIndex>>().len() <= 1 {
+        if graph.nodes(&l).len() <= 1 {
             levels.push(Symbol::Last);
         } else {
             levels.push(Symbol::Split);
